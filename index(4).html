@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>OGE Progress Tracker</title>
+  <style>
+    :root{
+      --bg:#07111f;
+      --bg2:#0c1c31;
+      --panel:rgba(255,255,255,.07);
+      --panel-strong:rgba(255,255,255,.10);
+      --line:rgba(255,255,255,.10);
+      --text:#eef7ff;
+      --muted:#9db2c9;
+      --blue:#5dc9ff;
+      --blue2:#4e7bff;
+      --green:#55d28f;
+      --yellow:#ffc74f;
+      --pink:#ff7fe6;
+      --danger:#ff8585;
+      --shadow:0 20px 60px rgba(0,0,0,.28);
+    }
+
+    *{box-sizing:border-box}
+    html,body{margin:0}
+    body{
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 10% 10%, rgba(93,201,255,.16), transparent 25%),
+        radial-gradient(circle at 90% 10%, rgba(78,123,255,.18), transparent 28%),
+        radial-gradient(circle at 50% 80%, rgba(255,127,230,.10), transparent 30%),
+        linear-gradient(180deg, #07111f 0%, #0b1630 45%, #07101c 100%);
+      min-height:100vh;
+    }
+
+    .container{max-width:1400px;margin:0 auto;padding:24px}
+    .glass{
+      background:var(--panel);
+      border:1px solid var(--line);
+      box-shadow:var(--shadow);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+
+    .hero{
+      border-radius:32px;
+      padding:24px;
+      position:relative;
+      overflow:hidden;
+    }
+    .hero::before{
+      content:"";
+      position:absolute; inset:-2px;
+      background:linear-gradient(135deg, rgba(93,201,255,.35), rgba(78,123,255,.12), rgba(255,127,230,.18));
+      filter:blur(24px); opacity:.8; z-index:0;
+    }
+    .hero-inner{position:relative; z-index:1}
+    .topbar{
+      display:flex; justify-content:space-between; gap:16px; align-items:flex-start; flex-wrap:wrap;
+    }
+    .brand{
+      display:flex; gap:16px; align-items:center;
+    }
+    .logo{
+      width:66px;height:66px;border-radius:22px;
+      display:grid;place-items:center;
+      background:linear-gradient(135deg, var(--blue), var(--blue2));
+      color:white; font-size:28px; font-weight:800;
+      box-shadow:0 10px 30px rgba(78,123,255,.35);
+    }
+    h1{margin:0;font-size:clamp(28px,4vw,44px);line-height:1.03}
+    .subtitle{margin:8px 0 0;color:var(--muted);font-size:15px}
+    .live{
+      display:flex;align-items:center;gap:10px;
+      padding:10px 14px;border-radius:999px;
+      background:rgba(255,255,255,.06);
+      color:var(--muted); font-size:14px;
+    }
+    .dot{
+      width:10px;height:10px;border-radius:50%;
+      background:var(--green); box-shadow:0 0 14px var(--green);
+      animation:pulse 1.8s infinite;
+    }
+    @keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(.7);opacity:.5}}
+
+    .hero-bottom{
+      margin-top:22px;
+      display:grid;
+      grid-template-columns:1.2fr .8fr;
+      gap:18px;
+    }
+
+    .student-switcher, .stats{
+      border-radius:24px;
+      padding:18px;
+    }
+
+    .section-label{
+      color:var(--muted);
+      font-size:13px;
+      text-transform:uppercase;
+      letter-spacing:.12em;
+      margin-bottom:12px;
+    }
+
+    .student-pills{
+      display:flex; gap:12px; flex-wrap:wrap;
+    }
+
+    .pill{
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.05);
+      color:var(--text);
+      border-radius:18px;
+      padding:12px 16px;
+      cursor:pointer;
+      transition:.2s ease;
+      min-width:130px;
+      text-align:left;
+    }
+    .pill:hover{transform:translateY(-1px);background:rgba(255,255,255,.08)}
+    .pill.active{
+      background:linear-gradient(135deg, rgba(93,201,255,.22), rgba(78,123,255,.22));
+      border-color:rgba(93,201,255,.4);
+      box-shadow:0 8px 30px rgba(78,123,255,.18);
+    }
+    .pill-name{font-weight:700}
+    .pill-sub{font-size:12px;color:var(--muted);margin-top:4px}
+
+    .stats-grid{
+      display:grid; grid-template-columns:repeat(3,1fr); gap:12px;
+    }
+    .stat{
+      border-radius:20px;
+      padding:16px;
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.08);
+    }
+    .stat-k{font-size:13px;color:var(--muted);margin-bottom:8px}
+    .stat-v{font-size:28px;font-weight:800}
+    .stat-v small{font-size:14px;color:var(--muted);font-weight:600}
+
+    .variants-panel{
+      margin-top:24px; border-radius:28px; padding:22px;
+    }
+    .variants-head{
+      display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:18px; flex-wrap:wrap;
+    }
+    .variants-title{
+      font-size:24px; font-weight:800;
+    }
+    .legend{
+      display:flex; gap:12px; flex-wrap:wrap; color:var(--muted); font-size:13px;
+    }
+    .legend span{display:flex; align-items:center; gap:8px}
+    .swatch{width:12px;height:12px;border-radius:50%}
+    .swatch.done{background:var(--green)}
+    .swatch.current{background:var(--blue)}
+    .swatch.empty{background:rgba(255,255,255,.25)}
+
+    .variants-grid{
+      display:grid;
+      grid-template-columns:repeat(10,1fr);
+      gap:12px;
+    }
+    .variant-card{
+      position:relative;
+      min-height:106px;
+      border-radius:22px;
+      padding:14px 14px 12px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.05);
+      cursor:pointer;
+      transition:.22s ease;
+      overflow:hidden;
+    }
+    .variant-card:hover{transform:translateY(-2px);background:rgba(255,255,255,.075)}
+    .variant-card.active{
+      background:linear-gradient(160deg, rgba(93,201,255,.22), rgba(78,123,255,.18));
+      border-color:rgba(93,201,255,.35);
+      box-shadow:0 12px 35px rgba(78,123,255,.18);
+    }
+    .variant-card.done:not(.active){
+      background:linear-gradient(160deg, rgba(85,210,143,.18), rgba(255,255,255,.04));
+      border-color:rgba(85,210,143,.30);
+    }
+    .variant-number{
+      font-size:13px;color:var(--muted);margin-bottom:8px;font-weight:600;
+    }
+    .variant-score{
+      font-size:34px; font-weight:900; line-height:1;
+    }
+    .variant-score small{font-size:15px;color:var(--muted);font-weight:700}
+    .progress-line{
+      position:absolute; left:14px; right:14px; bottom:14px; height:8px;
+      background:rgba(255,255,255,.10); border-radius:999px; overflow:hidden;
+    }
+    .progress-fill{
+      height:100%;
+      background:linear-gradient(90deg, var(--blue), var(--pink));
+      border-radius:999px;
+    }
+    .variant-card.done:not(.active) .progress-fill{
+      background:linear-gradient(90deg, #41d880, #8ef7bf);
+    }
+
+    .details-wrap{
+      margin-top:24px;
+      display:grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap:20px;
+    }
+
+    .details, .summary{
+      border-radius:28px;
+      padding:22px;
+    }
+    .details-head{
+      display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:18px; flex-wrap:wrap;
+    }
+    .title-2{font-size:28px; font-weight:800}
+    .name-badge{
+      border-radius:999px;
+      padding:10px 14px;
+      background:rgba(255,255,255,.07);
+      color:var(--text);
+      border:1px solid rgba(255,255,255,.08);
+      font-weight:700;
+    }
+
+    .tasks-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:14px;
+    }
+    .task{
+      border-radius:20px;
+      padding:16px;
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.08);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .task-title{font-weight:800;font-size:17px}
+    .task-max{margin-top:5px;color:var(--muted);font-size:13px}
+    .task-score{
+      min-width:90px;
+      text-align:center;
+      border-radius:16px;
+      padding:14px 10px;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.08);
+      font-size:28px;
+      font-weight:900;
+      color:var(--blue);
+      box-shadow: inset 0 0 20px rgba(255,255,255,.02);
+    }
+    .task-score small{
+      display:block;
+      font-size:11px;
+      color:var(--muted);
+      font-weight:700;
+      margin-top:4px;
+      letter-spacing:.06em;
+    }
+
+    .summary-box{
+      padding:18px;
+      border-radius:22px;
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.08);
+      margin-bottom:14px;
+    }
+    .summary-title{font-size:14px;color:var(--muted);margin-bottom:8px}
+    .summary-big{
+      font-size:52px; font-weight:900; line-height:1;
+      color:var(--text);
+    }
+    .summary-big small{font-size:18px;color:var(--muted);font-weight:700}
+    .grade-row{
+      display:grid; gap:10px; margin-top:8px;
+    }
+    .grade{
+      border-radius:16px;
+      padding:12px 14px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.07);
+      display:flex; justify-content:space-between; gap:10px; align-items:center;
+      color:var(--muted);
+      font-size:14px;
+    }
+    .grade.active{
+      background:linear-gradient(135deg, rgba(255,199,79,.18), rgba(255,127,230,.10));
+      border-color:rgba(255,199,79,.22);
+      color:var(--text);
+    }
+    .grade b{font-size:20px}
+    .mini-bar{
+      height:12px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:14px
+    }
+    .mini-bar > div{
+      height:100%;background:linear-gradient(90deg,var(--blue), var(--pink));border-radius:999px
+    }
+
+    .status-note{
+      font-size:13px;color:var(--muted);margin-top:12px;line-height:1.5
+    }
+
+    .loading, .empty-state{
+      padding:30px;
+      text-align:center;
+      color:var(--muted);
+      font-size:16px;
+    }
+
+    @media (max-width: 1200px){
+      .variants-grid{grid-template-columns:repeat(5,1fr)}
+      .details-wrap{grid-template-columns:1fr}
+      .hero-bottom{grid-template-columns:1fr}
+    }
+
+    @media (max-width: 760px){
+      .container{padding:14px}
+      .hero, .variants-panel, .details, .summary{border-radius:22px}
+      .tasks-grid{grid-template-columns:1fr}
+      .variants-grid{grid-template-columns:repeat(2,1fr)}
+      .stats-grid{grid-template-columns:1fr}
+      .title-2{font-size:24px}
+      .summary-big{font-size:40px}
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <section class="hero glass">
+      <div class="hero-inner">
+        <div class="topbar">
+          <div class="brand">
+            <div class="logo" id="logoLetter">K</div>
+            <div>
+              <h1>OGE Progress Tracker</h1>
+              <p class="subtitle">Современный публичный трекер результатов ФИПИ-тестов</p>
+            </div>
+          </div>
+          <div class="live"><span class="dot"></span><span id="liveText">Данные загружаются…</span></div>
+        </div>
+
+        <div class="hero-bottom">
+          <div class="student-switcher glass">
+            <div class="section-label">Ученики</div>
+            <div id="studentPills" class="student-pills"></div>
+          </div>
+
+          <div class="stats glass">
+            <div class="section-label">Быстрая сводка</div>
+            <div class="stats-grid">
+              <div class="stat">
+                <div class="stat-k">Выбранный вариант</div>
+                <div class="stat-v" id="statVariant">1</div>
+              </div>
+              <div class="stat">
+                <div class="stat-k">Баллы</div>
+                <div class="stat-v"><span id="statPoints">0</span><small>/68</small></div>
+              </div>
+              <div class="stat">
+                <div class="stat-k">Оценка</div>
+                <div class="stat-v" id="statGrade">2</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="variants-panel glass">
+      <div class="variants-head">
+        <div class="variants-title">20 вариантов</div>
+        <div class="legend">
+          <span><i class="swatch current"></i> текущий</span>
+          <span><i class="swatch done"></i> заполнен</span>
+          <span><i class="swatch empty"></i> пустой</span>
+        </div>
+      </div>
+      <div id="variantsGrid" class="variants-grid"></div>
+    </section>
+
+    <div class="details-wrap">
+      <section class="details glass">
+        <div class="details-head">
+          <div class="title-2" id="detailTitle">Variant 1</div>
+          <div class="name-badge" id="detailName">Ксюша</div>
+        </div>
+        <div id="tasksGrid" class="tasks-grid"></div>
+      </section>
+
+      <aside class="summary glass">
+        <div class="summary-box">
+          <div class="summary-title">Final result</div>
+          <div class="summary-big"><span id="finalScore">0</span><small>/68</small></div>
+          <div class="mini-bar"><div id="scoreBar" style="width:0%"></div></div>
+        </div>
+
+        <div class="summary-box">
+          <div class="summary-title">Шкала оценивания</div>
+          <div class="grade-row">
+            <div class="grade" id="grade2"><span>0–28 points</span><b>2</b></div>
+            <div class="grade" id="grade3"><span>29–45 points</span><b>3</b></div>
+            <div class="grade" id="grade4"><span>46–57 points</span><b>4</b></div>
+            <div class="grade" id="grade5"><span>58–68 points</span><b>5</b></div>
+          </div>
+        </div>
+
+        <div class="summary-box">
+          <div class="summary-title">Статус варианта</div>
+          <div id="variantStatus" class="summary-big" style="font-size:24px">Не заполнен</div>
+          <div class="status-note">
+            Этот сайт только показывает результаты. Редактирование выполняется через отдельную админку.
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <div id="loading" class="loading">Загрузка данных…</div>
+    <div id="emptyState" class="empty-state" style="display:none">В базе пока нет учеников.</div>
+  </div>
+
+  <script>
+    const DB = "https://oge-progress-tracker-default-rtdb.europe-west1.firebasedatabase.app/students.json";
+
+    const FIELDS = [
+      { key: "task_1_4", label: "1–4", max: 4 },
+      { key: "task_5", label: "5", max: 5 },
+      { key: "task_6_11", label: "6–11", max: 6 },
+      { key: "task_12", label: "12", max: 6 },
+      { key: "task_13_19", label: "13–19", max: 7 },
+      { key: "task_20_28", label: "20–28", max: 9 },
+      { key: "task_29_34", label: "29–34", max: 6 },
+      { key: "task_35", label: "35", max: 10 },
+      { key: "text", label: "Текст", max: 2 },
+      { key: "interview", label: "Интервью", max: 6 },
+      { key: "monologue", label: "Монолог", max: 7 }
+    ];
+
+    let students = {};
+    let selectedStudentId = null;
+    let selectedVariant = "01";
+
+    const $ = id => document.getElementById(id);
+
+    function calcGrade(total){
+      if(total >= 58) return 5;
+      if(total >= 46) return 4;
+      if(total >= 29) return 3;
+      return 2;
+    }
+
+    function studentName(studentId){
+      return students[studentId]?.name || studentId;
+    }
+
+    function getVariant(studentId, variantId){
+      return students[studentId]?.variants?.[variantId] || {
+        scores: {},
+        total: 0,
+        completed: false
+      };
+    }
+
+    function sortedStudentIds(){
+      return Object.keys(students).sort((a,b)=>
+        studentName(a).localeCompare(studentName(b), "ru")
+      );
+    }
+
+    function renderStudents(){
+      const wrap = $("studentPills");
+      wrap.innerHTML = "";
+
+      const ids = sortedStudentIds();
+      if(!ids.length){
+        $("emptyState").style.display = "block";
+        return;
+      }
+      $("emptyState").style.display = "none";
+
+      ids.forEach(id=>{
+        const btn = document.createElement("button");
+        btn.className = "pill" + (id === selectedStudentId ? " active" : "");
+        btn.innerHTML = `
+          <div class="pill-name">${studentName(id)}</div>
+          <div class="pill-sub">20 вариантов</div>
+        `;
+        btn.onclick = ()=>{
+          selectedStudentId = id;
+          selectedVariant = "01";
+          renderAll();
+        };
+        wrap.appendChild(btn);
+      });
+
+      const firstLetter = studentName(selectedStudentId).trim().charAt(0).toUpperCase() || "S";
+      $("logoLetter").textContent = firstLetter;
+    }
+
+    function renderVariants(){
+      const wrap = $("variantsGrid");
+      wrap.innerHTML = "";
+
+      for(let i=1;i<=20;i++){
+        const id = String(i).padStart(2,"0");
+        const variant = getVariant(selectedStudentId, id);
+        const score = Number(variant.total || 0);
+        const completed = !!variant.completed || score > 0;
+        const percent = Math.max(0, Math.min(100, score / 68 * 100));
+
+        const card = document.createElement("button");
+        card.className = "variant-card" +
+          (id === selectedVariant ? " active" : "") +
+          (completed ? " done" : "");
+        card.innerHTML = `
+          <div class="variant-number">Variant ${i}</div>
+          <div class="variant-score">${score}<small>/68</small></div>
+          <div class="progress-line"><div class="progress-fill" style="width:${percent}%"></div></div>
+        `;
+        card.onclick = ()=>{
+          selectedVariant = id;
+          renderDetails();
+          renderTopStats();
+          renderVariants();
+        };
+        wrap.appendChild(card);
+      }
+    }
+
+    function renderDetails(){
+      const variant = getVariant(selectedStudentId, selectedVariant);
+      const scores = variant.scores || {};
+      $("detailTitle").textContent = "Variant " + Number(selectedVariant);
+      $("detailName").textContent = studentName(selectedStudentId);
+
+      const grid = $("tasksGrid");
+      grid.innerHTML = "";
+
+      FIELDS.forEach(field=>{
+        const score = Number(scores[field.key] || 0);
+        const el = document.createElement("div");
+        el.className = "task";
+        el.innerHTML = `
+          <div>
+            <div class="task-title">${field.label}</div>
+            <div class="task-max">максимум ${field.max}</div>
+          </div>
+          <div class="task-score">${score}<small>из ${field.max}</small></div>
+        `;
+        grid.appendChild(el);
+      });
+
+      const total = Number(variant.total || 0);
+      $("finalScore").textContent = total;
+      $("scoreBar").style.width = Math.max(0, Math.min(100, total / 68 * 100)) + "%";
+      $("variantStatus").textContent = (variant.completed || total > 0) ? "Заполнен" : "Не заполнен";
+
+      [2,3,4,5].forEach(n => $("grade"+n).classList.remove("active"));
+      $("grade" + calcGrade(total)).classList.add("active");
+    }
+
+    function renderTopStats(){
+      const variant = getVariant(selectedStudentId, selectedVariant);
+      const total = Number(variant.total || 0);
+      $("statVariant").textContent = Number(selectedVariant);
+      $("statPoints").textContent = total;
+      $("statGrade").textContent = calcGrade(total);
+    }
+
+    function renderAll(){
+      renderStudents();
+      renderVariants();
+      renderDetails();
+      renderTopStats();
+      $("loading").style.display = "none";
+    }
+
+    async function loadData(){
+      try{
+        $("liveText").textContent = "Обновляю данные…";
+        const response = await fetch(DB + "?_=" + Date.now());
+        const data = await response.json();
+        students = data || {};
+
+        const ids = sortedStudentIds();
+        if(!ids.length){
+          $("loading").style.display = "none";
+          $("emptyState").style.display = "block";
+          $("liveText").textContent = "Нет данных";
+          return;
+        }
+
+        if(!selectedStudentId || !students[selectedStudentId]){
+          selectedStudentId = ids[0];
+        }
+
+        renderAll();
+        $("liveText").textContent = "Данные синхронизированы";
+      }catch(err){
+        console.error(err);
+        $("loading").textContent = "Не удалось загрузить данные.";
+        $("liveText").textContent = "Ошибка загрузки";
+      }
+    }
+
+    loadData();
+    setInterval(loadData, 30000);
+  </script>
+</body>
+</html>
